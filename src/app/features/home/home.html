@@ -1,0 +1,74 @@
+<p>home works!</p>
+<div class="hero-section bg-light py-5">
+  <div class="container text-center">
+    <h1 class="display-4 fw-bold mb-3">
+      مرحبًا بك في Dummy Store 🛍️
+    </h1>
+    <p class="lead text-muted mb-4">
+      تطبيق Angular حديث يوضح أفضل ممارسات المعمارية باستخدام Signals و Standalone Components
+    </p>
+
+    @if (authService.isAuthenticated()) {
+    <div class="alert alert-success d-inline-block">
+      <strong>مرحبًا، {{ authService.user()?.firstName }}!</strong>
+      أنت مسجل دخول الآن.
+    </div>
+    <div class="mt-3">
+      <a routerLink="/features" class="btn btn-primary btn-lg">
+        استكشف الـ Features →
+      </a>
+    </div>
+    } @else {
+    <div class="mt-4">
+      <a routerLink="/auth/login" class="btn btn-primary btn-lg me-2">
+        تسجيل الدخول
+      </a>
+      <a routerLink="/about" class="btn btn-outline-secondary btn-lg">
+        تعرف علينا
+      </a>
+    </div>
+    }
+  </div>
+</div>
+
+<div class="container py-5">
+  <h2 class="text-center mb-5">المميزات الرئيسية</h2>
+
+  <div class="row g-4">
+    <div class="col-md-4">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-body text-center">
+          <div class="display-4 mb-3">⚡</div>
+          <h5 class="card-title">أداء عالي</h5>
+          <p class="card-text text-muted">
+            Lazy Loading + Standalone Components + OnPush Change Detection
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-body text-center">
+          <div class="display-4 mb-3">🏗️</div>
+          <h5 class="card-title">معمارية حديثة</h5>
+          <p class="card-text text-muted">
+            Domain-Driven Design + Facade Pattern + Signals State Management
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-body text-center">
+          <div class="display-4 mb-3">🎨</div>
+          <h5 class="card-title">تصميم Bootstrap</h5>
+          <p class="card-text text-muted">
+            Bootstrap 5.3.8 مع مكونات قابلة لإعادة الاستخدام
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,4 +1,3 @@
-
 You are an expert in TypeScript, Angular, and scalable web application development. You write functional, maintainable, performant, and accessible code following Angular and TypeScript best practices.
 
 ## TypeScript Best Practices
@@ -53,3 +52,62 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - Design services around a single responsibility
 - Use the `providedIn: 'root'` option for singleton services
 - Use the `inject()` function instead of constructor injection
+  src/app/
+  │
+  ├── core/ # ⚙️ خدمات singleton — تُحمّل مرة واحدة
+  │ ├── interceptors/
+  │ │ └── auth.interceptor.ts # يرفق Bearer token مع كل طلب
+  │ ├── guards/
+  │ │ └── auth.guard.ts # يحمي صفحات العرض
+  │ ├── services/
+  │ │ ├── state.service.ts # حالة UI عامة بالـ Signals (ثيم، لغة، تحميل)
+  │ │ └── auth.service.ts # 🔐 جديد: login/logout ضد DummyJSON
+  │ └── index.ts # نقطة استيراد موحّدة (كما هو عندك)
+  │
+  ├── shared/ # 🧩 UI قابل لإعادة الاستخدام — بلا منطق
+  │ ├── components/
+  │ │ ├── header/ # (موجود عندك)
+  │ │ ├── spinner/ # مؤشر تحميل موحّد
+  │ │ └── error-box/ # رسالة خطأ موحّدة
+  │ ├── utilities/ # pipes + دوال مساعدة نقية
+  │ └── index.ts
+  │
+  ├── features/ # 📦 نطاقات العمل
+  │ │
+  │ ├── home/ # صفحة الهبوط (موجودة)
+  │ │ └── home.component.ts
+  │ │
+  │ ├── about/ # صفحة عن التطبيق (موجودة)
+  │ │ └── about.component.ts
+  │ │
+  │ ├── auth/ # 🔐 جديد: feature مستقل للدخول
+  │ │ ├── login/
+  │ │ │ └── login.component.ts
+  │ │ └── auth.routes.ts
+  │ │
+  │ └── features/ # ⭐ معرض البيانات (محمي بالـ guard)
+  │ ├── features.component.ts # Shell: تبويبات/قائمة جانبية + <router-outlet/>
+  │ ├── features.routes.ts # توجيه داخلي لكل عرض
+  │ │
+  │ ├── products/ # العرض 1 — النمط المرجعي
+  │ │ ├── data-access/
+  │ │ │ ├── product.model.ts # شكل بيانات DummyJSON
+  │ │ │ ├── products.service.ts # HTTP فقط (غبي)
+  │ │ │ └── products.facade.ts # Signals + المنطق (ذكي)
+  │ │ ├── components/
+  │ │ │ └── product-card/ # Presentational
+  │ │ ├── products-list.component.ts # Smart
+  │ │ └── product-details.component.ts
+  │ │
+  │ ├── users/ # العرض 2 — نسخ نفس النمط
+  │ │ ├── data-access/
+  │ │ ├── components/
+  │ │ └── users-list.component.ts
+  │ │
+  │ ├── todos/ # العرض 3
+  │ └── recipes/ # العرض 4
+  │
+  ├── app.ts # 🐚 Thin Shell: header + <router-outlet/>
+  ├── app.routes.ts # 🗺️ lazy loading لكل الـ features
+  ├── app.scss
+  └── AGENTS.md
