@@ -2,7 +2,6 @@ import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 
 import { routes } from './app.routes';
-import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { withInterceptors, provideHttpClient, withFetch } from '@angular/common/http';
 import { authInterceptor } from './core/interceptors/auth-interceptor';
 
@@ -14,6 +13,5 @@ export const appConfig: ApplicationConfig = {
     ),
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes, withComponentInputBinding()), // ✅ هذا السطر مهم جدًا
-    provideClientHydration(withEventReplay()),
   ],
 };

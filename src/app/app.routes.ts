@@ -17,11 +17,11 @@ export const routes: Routes = [
     path: 'auth',
     loadChildren: () => import('./features/auth/auth.routes').then((m) => m.AUTH_ROUTES), // ✅ مسار تسجيل الدخول
   },
-  {
-    path: 'features',
-    canActivate: [authGuard], // ✅ حماية الصفحات الحساسة
-    loadChildren: () => import('./features/auth/auth.routes').then((m) => m.AUTH_ROUTES),
-  },
+  // {
+  //   path: 'features',
+  //   canActivate: [authGuard], // ✅ حماية الصفحات الحساسة
+  //   loadChildren: () => import('./features/auth/auth.routes').then((m) => m.AUTH_ROUTES),
+  // },
   {
     path: '**',
     redirectTo: '',

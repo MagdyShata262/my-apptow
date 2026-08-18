@@ -1,12 +1,23 @@
- .navbar-brand {
-   font-size: 1.5rem;
- }
-
- .nav-link.active {
-   font-weight: bold;
-   border-bottom: 2px solid white;
- }
-
- .dropdown-menu.show {
+ :host {
    display: block;
+
+   .navbar {
+     z-index: 1030;
+   }
+
+   .offcanvas {
+     transition: transform 0.3s ease-in-out;
+
+     @media (max-width: 991.98px) {
+       width: 280px;
+     }
+   }
+
+   .offcanvas-backdrop {
+     z-index: 1029;
+   }
+
+   .navbar-brand {
+     font-size: 1.25rem;
+   }
  }

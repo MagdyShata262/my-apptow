@@ -1,10 +1,10 @@
 // src/app/core/services/auth.service.ts
 import { Injectable, inject, signal, computed, afterNextRender } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, tap, catchError, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
-// ✅ واجهة البيانات المطابقة لتوثيق DummyJSON
+// ✅ واجهة بيانات الاستجابة من تسجيل الدخول
 export interface AuthUser {
   id: number;
   username: string;
@@ -16,6 +16,10 @@ export interface AuthUser {
   accessToken: string;
   refreshToken: string;
 }
+
+// ✅ واجهة بيانات المستخدم المرتجعة من /auth/me (بدون tokens)
+export type UserProfile = Omit<AuthUser, 'accessToken' | 'refreshToken'>;
+
 @Injectable({
   providedIn: 'root',
 })
@@ -23,17 +27,19 @@ export class Auth {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl;
 
-  // ✅ Signals لإدارة الحالة
+  // ✅ Signals لإدارة الحالة الداخلية
   private readonly accessTokenSignal = signal<string | null>(null);
   private readonly refreshTokenSignal = signal<string | null>(null);
-  private readonly userSignal = signal<AuthUser | null>(null);
+  private readonly userSignal = signal<UserProfile | AuthUser | null>(null);
 
-  // ✅ Public Readonly Signals
+  // ✅ Readonly Signals للوصول الخارجي
   readonly accessToken = this.accessTokenSignal.asReadonly();
+  readonly refreshToken = this.refreshTokenSignal.asReadonly();
   readonly user = this.userSignal.asReadonly();
   readonly isAuthenticated = computed(() => !!this.accessTokenSignal());
+
   constructor() {
-    // ✅ بعدNextRender يضمن التشغيل في المتصفح فقط (ليس على الخادم)
+    // ✅ الحماية من SSR والقراءة من local storage
     afterNextRender(() => {
       this.loadFromStorage();
     });
@@ -50,21 +56,44 @@ export class Auth {
       .pipe(tap((res) => this.saveSession(res)));
   }
 
-  // 2. التحقق من صلاحية الـ Token عند فتح التطبيق (GET /auth/me)
-  checkAuth(): Observable<AuthUser | null> {
+  // 2. التحقق من التوكن وجلب بيانات المستخدم الحالي
+  checkAuth(): Observable<UserProfile | null> {
     const token = this.accessTokenSignal();
     if (!token) return of(null);
 
-    return this.http.get<AuthUser>(`${this.apiUrl}/auth/me`).pipe(
+    // إضافة الهيدر يدوياً في حال عدم وجود Interceptor
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`,
+    });
+
+    return this.http.get<UserProfile>(`${this.apiUrl}/auth/me`, { headers }).pipe(
       tap((user) => this.userSignal.set(user)),
       catchError(() => {
-        this.logout(); // إذا فشل، نقوم بتسجيل الخروج
+        this.logout();
         return of(null);
       }),
     );
   }
 
-  // 3. تسجيل الخروج
+  // 3. تجديد التوكن (Refresh Token)
+  renewToken(): Observable<{ accessToken: string; refreshToken: string }> {
+    const currentRefreshToken = this.refreshTokenSignal();
+
+    return this.http
+      .post<{ accessToken: string; refreshToken: string }>(`${this.apiUrl}/auth/refresh`, {
+        refreshToken: currentRefreshToken,
+        expiresInMins: 30,
+      })
+      .pipe(
+        tap((res) => {
+          this.accessTokenSignal.set(res.accessToken);
+          this.refreshTokenSignal.set(res.refreshToken);
+          this.updateStoredTokens(res.accessToken, res.refreshToken);
+        }),
+      );
+  }
+
+  // 4. تسجيل الخروج
   logout(): void {
     this.accessTokenSignal.set(null);
     this.refreshTokenSignal.set(null);
@@ -74,19 +103,34 @@ export class Auth {
     }
   }
 
-  // ✅ دوال مساعدة خاصة (Private Helpers)
+  // Private Helpers
   private saveSession(user: AuthUser): void {
     this.accessTokenSignal.set(user.accessToken);
     this.refreshTokenSignal.set(user.refreshToken);
     this.userSignal.set(user);
-    // ✅ حماية إضافية
+
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('auth_session', JSON.stringify(user));
     }
   }
 
+  private updateStoredTokens(accessToken: string, refreshToken: string): void {
+    if (typeof localStorage === 'undefined') return;
+    const saved = localStorage.getItem('auth_session');
+    if (saved) {
+      try {
+        const user = JSON.parse(saved);
+        user.accessToken = accessToken;
+        user.refreshToken = refreshToken;
+        localStorage.setItem('auth_session', JSON.stringify(user));
+      } catch {
+        localStorage.removeItem('auth_session');
+      }
+    }
+  }
+
   private loadFromStorage(): void {
-    if (typeof localStorage === 'undefined') return; // ✅ حماية
+    if (typeof localStorage === 'undefined') return;
     const saved = localStorage.getItem('auth_session');
     if (saved) {
       try {
@@ -95,7 +139,6 @@ export class Auth {
         this.refreshTokenSignal.set(user.refreshToken);
         this.userSignal.set(user);
       } catch {
-        // إذا كانت البيانات تالفة، احذفها
         localStorage.removeItem('auth_session');
       }
     }

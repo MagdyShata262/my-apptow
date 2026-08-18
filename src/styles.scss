@@ -1,9 +1,26 @@
-/* You can add global styles to this file, and also import other style files */
-@use 'bootstrap/scss/bootstrap';
-as bs
+// src/styles.scss
 
-/* يمكنك إضافة بعض الأنماط العامة هنا */
+// 1. تعريف المتغيرات العامة
+$navbar-height: 64px;
+
+// 2. استيراد Bootstrap بشكل صحيح
+@use 'bootstrap/scss/bootstrap' as bs;
+
+// 3. الأنماط العامة لمنطقة body
 body {
-  background-color: #f8f9fa;
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  // إضافة مسافة علوية تعادل ارتفاع الـ Navbar المثبت لمنع التغطية
+  padding-top: $navbar-height;
+}
+
+// 4. معالجة التمرير التلقائي للروابط الداخلية (Anchor Scrolling)
+html {
+  scroll-padding-top: $navbar-height + 10px;
+  color-scheme: light;
+}
+
+html[data-bs-theme='dark'] {
+  color-scheme: dark;
 }

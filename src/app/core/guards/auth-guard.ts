@@ -1,8 +1,3 @@
-// import { CanActivateFn } from '@angular/router';
-
-// export const authGuard: CanActivateFn = (route, state) => {
-//   return true;
-// };
 // src/app/core/guards/auth.guard.ts
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
@@ -12,14 +7,21 @@ export const authGuard: CanActivateFn = (route, state) => {
   const authService = inject(Auth);
   const router = inject(Router);
 
-  // ✅ إذا كان المستخدم مسجل دخول، اسمح بالمرور
+  // ✅ التحقق من حالة التسجيل
   if (authService.isAuthenticated()) {
     return true;
   }
 
-  // ✅ وإلا، وجهه إلى صفحة تسجيل الدخول
-  // مع حفظ الـ URL الحالي في queryParams للعودة إليه لاحقًا
-  return router.createUrlTree(['/auth/login'], {
+  // ✅ حماية إضافية: القراءة المباشرة من Storage إذا كان التطبيق في مرحلة الـ Initial Load
+  if (typeof localStorage !== 'undefined') {
+    const savedSession = localStorage.getItem('auth_session');
+    if (savedSession) {
+      return true; // تسمح بالمرور وستتولى دالة loadFromStorage تحديث الـ Signals
+    }
+  }
+
+  // ✅ إعادة التوجيه لصفحة تسجيل الدخول مع حفظ مسار العودة
+  return router.createUrlTree(['/login'], {
     queryParams: { returnUrl: state.url },
   });
 };
