@@ -1,5 +1,6 @@
 // src/app/core/services/auth.service.ts
-import { Injectable, inject, signal, computed, afterNextRender } from '@angular/core';
+import { Injectable, inject, signal, computed, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, tap, catchError, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -26,6 +27,7 @@ export type UserProfile = Omit<AuthUser, 'accessToken' | 'refreshToken'>;
 export class Auth {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl;
+  private readonly platformId = inject(PLATFORM_ID);
 
   // ✅ Signals لإدارة الحالة الداخلية
   private readonly accessTokenSignal = signal<string | null>(null);
@@ -39,10 +41,10 @@ export class Auth {
   readonly isAuthenticated = computed(() => !!this.accessTokenSignal());
 
   constructor() {
-    // ✅ الحماية من SSR والقراءة من local storage
-    afterNextRender(() => {
+    // ✅ تحميل البيانات فوراً عند بدء التشغيل في المتصفح لضمان جاهزية الـ Signals للـ Guards
+    if (isPlatformBrowser(this.platformId)) {
       this.loadFromStorage();
-    });
+    }
   }
 
   // 1. تسجيل الدخول

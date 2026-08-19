@@ -8,22 +8,23 @@ import {
   AfterViewInit,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router'; // ✅ استيراد RouterLink و RouterLinkActive
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { Auth } from '../../../core/services/auth';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive], // ✅ إضافة توجيهات التنقل هنا
+  imports: [CommonModule, RouterLink, RouterLinkActive],
   templateUrl: './header.html',
   styleUrl: './header.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush, // ✅ أداء عالي متوافق مع Signals
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Header implements AfterViewInit {
   protected readonly authService = inject(Auth);
   private readonly router = inject(Router);
+  private readonly el = inject(ElementRef);
 
-  // ✅ استخدام Signals للتحكم بالحالة
+  // Signals للحالة
   isMenuCollapsed = signal(true);
   isUserMenuOpen = signal(false);
   readonly isDarkMode = signal(this.getInitialTheme());
@@ -42,11 +43,9 @@ export class Header implements AfterViewInit {
   }
 
   private applyTheme(): void {
-    if (typeof document === 'undefined') {
-      return;
-    }
+    if (typeof document === 'undefined') return;
 
-    const theme = this.isDarkMode() === 'dark' ? 'dark' : 'light';
+    const theme = this.isDarkMode();
     document.documentElement.setAttribute('data-bs-theme', theme);
     localStorage.setItem('theme', theme);
   }
@@ -79,16 +78,12 @@ export class Header implements AfterViewInit {
 
   logout(): void {
     this.authService.logout();
-    this.isUserMenuOpen.set(false);
+    this.closeAllMenus();
     this.router.navigateByUrl('/auth/login');
   }
 
-  private el = inject(ElementRef);
-
   ngAfterViewInit(): void {
-    if (typeof document === 'undefined') {
-      return;
-    }
+    if (typeof document === 'undefined') return;
 
     this.applyTheme();
 
