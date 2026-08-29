@@ -1,47 +1,47 @@
-<div class="hero-section bg-light py-5">
-  <div class="container text-center">
-    <h1 class="display-4 fw-bold mb-3">
+<div class="hero-section py-5 position-relative overflow-hidden shadow-sm">
+  <div class="container text-center py-4">
+    <h1 class="display-4 fw-bold mb-3 text-white">
       مرحبًا بك في Dummy Store 🛍️
     </h1>
-    <p class="lead text-muted mb-4">
+    <p class="lead mb-4 text-white-50">
       تطبيق Angular حديث يوضح أفضل ممارسات المعمارية باستخدام Signals و Standalone Components
     </p>
 
     <!-- ✅ استخدام الـ Signals مباشرة -->
     @if (authService.isAuthenticated()) {
-    @let user = authService.user();
+      @let user = authService.user();
 
-    <div class="alert alert-success d-inline-block">
-      <strong>مرحبًا، {{ user?.firstName }}!</strong>
-      أنت مسجل دخول الآن.
-    </div>
-    <div class="mt-3">
-      <a routerLink="/products" class="btn btn-primary btn-lg">
-        استكشف المنتجات →
-      </a>
-    </div>
+      <div class="alert alert-success d-inline-block bg-white bg-opacity-20 border-0 text-white px-4 py-3 rounded-3 shadow-sm">
+        <strong class="d-block mb-1">مرحبًا، {{ user?.firstName }} {{ user?.lastName }}! 👋</strong>
+        أنت مسجل دخول الآن بنجاح.
+      </div>
+      <div class="mt-3">
+        <a routerLink="/products" class="btn btn-light btn-lg px-4 py-2 fw-semibold shadow-sm">
+          استكشف المنتجات →
+        </a>
+      </div>
     } @else {
-    <div class="mt-4">
-      <a routerLink="/auth/login" class="btn btn-primary btn-lg me-2">
-        تسجيل الدخول
-      </a>
-      <a routerLink="/about" class="btn btn-outline-secondary btn-lg">
-        تعرف علينا
-      </a>
-    </div>
+      <div class="mt-4">
+        <a routerLink="/auth/login" class="btn btn-light btn-lg px-4 py-2 me-2 fw-semibold shadow-sm">
+          تسجيل الدخول
+        </a>
+        <a routerLink="/about" class="btn btn-outline-light btn-lg px-4 py-2 fw-semibold">
+          تعرف علينا
+        </a>
+      </div>
     }
   </div>
 </div>
 
 <div class="container py-5">
-  <h2 class="text-center mb-5">المميزات الرئيسية</h2>
+  <h2 class="text-center mb-5 fw-bold text-body">المميزات الرئيسية</h2>
 
   <div class="row g-4">
     <div class="col-md-4">
-      <div class="card h-100 border-0 shadow-sm">
-        <div class="card-body text-center">
-          <div class="display-4 mb-3">⚡</div>
-          <h5 class="card-title">أداء عالي</h5>
+      <div class="card h-100 border-0 shadow-sm rounded-3">
+        <div class="card-body text-center p-4">
+          <div class="display-4 mb-3" aria-hidden="true">⚡</div>
+          <h5 class="card-title fw-bold">أداء عالي</h5>
           <p class="card-text text-muted">
             Lazy Loading + Standalone Components + OnPush Change Detection
           </p>
@@ -50,10 +50,10 @@
     </div>
 
     <div class="col-md-4">
-      <div class="card h-100 border-0 shadow-sm">
-        <div class="card-body text-center">
-          <div class="display-4 mb-3">🏗️</div>
-          <h5 class="card-title">معمارية حديثة</h5>
+      <div class="card h-100 border-0 shadow-sm rounded-3">
+        <div class="card-body text-center p-4">
+          <div class="display-4 mb-3" aria-hidden="true">🏗️</div>
+          <h5 class="card-title fw-bold">معمارية حديثة</h5>
           <p class="card-text text-muted">
             Domain-Driven Design + Facade Pattern + Signals State Management
           </p>
@@ -62,10 +62,10 @@
     </div>
 
     <div class="col-md-4">
-      <div class="card h-100 border-0 shadow-sm">
-        <div class="card-body text-center">
-          <div class="display-4 mb-3">🎨</div>
-          <h5 class="card-title">تصميم Bootstrap</h5>
+      <div class="card h-100 border-0 shadow-sm rounded-3">
+        <div class="card-body text-center p-4">
+          <div class="display-4 mb-3" aria-hidden="true">🎨</div>
+          <h5 class="card-title fw-bold">تصميم Bootstrap</h5>
           <p class="card-text text-muted">
             Bootstrap 5 مع مكونات قابلة لإعادة الاستخدام
           </p>
@@ -74,3 +74,59 @@
     </div>
   </div>
 </div>
+
+@if (!authService.isAuthenticated()) {
+  <div class="container pb-5" style="max-width: 420px;">
+    <div class="card shadow border-0 rounded-3">
+      <div class="card-body p-4">
+        <h3 class="card-title text-center mb-4 text-primary fw-bold">تسجيل دخول سريع</h3>
+
+        @if (errorMessage()) {
+          <div class="alert alert-danger py-2 mb-3" role="alert">
+            {{ errorMessage() }}
+          </div>
+        }
+
+        <form (submit)="onSubmit($event)">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">اسم المستخدم</label>
+            <input type="text" class="form-control"
+              [class.is-invalid]="loginForm.username().touched() && loginForm.username().invalid()"
+              [formField]="loginForm.username" placeholder="مثال: emilys" />
+            @if (loginForm.username().touched() && loginForm.username().invalid()) {
+              <div class="invalid-feedback d-block">
+                @for (err of loginForm.username().errors(); track err.kind) {
+                  <div>{{ err.message }}</div>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">كلمة المرور</label>
+            <input type="password" class="form-control"
+              [class.is-invalid]="loginForm.password().touched() && loginForm.password().invalid()"
+              [formField]="loginForm.password" placeholder="••••••••" />
+            @if (loginForm.password().touched() && loginForm.password().invalid()) {
+              <div class="invalid-feedback d-block">
+                @for (err of loginForm.password().errors(); track err.kind) {
+                  <div>{{ err.message }}</div>
+                }
+              </div>
+            }
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 py-2 mt-2 fw-semibold"
+            [disabled]="loginForm().invalid() || loading()">
+            @if (loading()) {
+              <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+              جاري التحقق...
+            } @else {
+              دخول
+            }
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+}

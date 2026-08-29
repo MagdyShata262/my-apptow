@@ -23,4 +23,9 @@ describe('Home', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('should initialize login form with username and password', () => {
+    expect(component.loginForm.username).toBeDefined();
+    expect(component.loginForm.password).toBeDefined();
+  });
 });

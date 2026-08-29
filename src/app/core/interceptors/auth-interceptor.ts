@@ -1,20 +1,34 @@
 // src/app/core/interceptors/auth.interceptor.ts
-import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
+
+import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+
 import { inject } from '@angular/core';
-import { catchError, switchMap, throwError } from 'rxjs';
+
+import { catchError, from, switchMap, throwError } from 'rxjs';
+
 import { Auth } from '../services/auth';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const authService = inject(Auth); // ✅ تعديل التسمية لـ AuthService
+  const authService = inject(Auth);
+
   const token = authService.accessToken();
 
-  // 1. استثناء مسارات عدم إرسال التوكن (Login & Refresh) لمنع الحلقات اللانهائية (Infinite Loops)
+  // ============================================
+  // 1. Login & Refresh
+  // ============================================
+
+  // لا نرسل Access Token إلى login أو refresh
+  // حتى لا ندخل في Infinite Loop.
   if (req.url.includes('/auth/login') || req.url.includes('/auth/refresh')) {
     return next(req);
   }
 
-  // 2. إرفاق הـ Access Token في الترويسة (Header) إذا كان متوفراً
+  // ============================================
+  // 2. Attach Access Token
+  // ============================================
+
   let authReq = req;
+
   if (token) {
     authReq = req.clone({
       setHeaders: {
@@ -23,30 +37,56 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     });
   }
 
-  // 3. تمرير الطلب ومعالجة الخطأ 401 للتوكن المنتهي تلقائياً
+  // ============================================
+  // 3. Send Request
+  // ============================================
+
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401 && !req.url.includes('/auth/refresh')) {
-        // محاولة تجديد التوكن
-        return authService.renewToken().pipe(
-          switchMap((tokens) => {
-            // إعادة إرسال الطلب الأصل بعد تحديث الـ Header بالتوكن الجديد
-            const newReq = req.clone({
-              setHeaders: {
-                Authorization: `Bearer ${tokens.accessToken}`,
-              },
-            });
-            return next(newReq);
-          }),
-          catchError((refreshErr) => {
-            // إذا فشلت محاولة التجديد أيضاً، يتم تسجيل الخروج
-            authService.logout();
-            return throwError(() => refreshErr);
-          }),
-        );
+      // ========================================
+      // 4. Access Token Expired
+      // ========================================
+
+      if (error.status !== 401) {
+        return throwError(() => error);
       }
 
-      return throwError(() => error);
+      // ========================================
+      // 5. Renew Token
+      // ========================================
+
+      return from(authService.renewToken()).pipe(
+        switchMap((newAccessToken) => {
+          // Refresh failed
+          if (!newAccessToken) {
+            authService.logout();
+
+            return throwError(() => error);
+          }
+
+          // ====================================
+          // 6. Retry Original Request
+          // ====================================
+
+          const newReq = req.clone({
+            setHeaders: {
+              Authorization: `Bearer ${newAccessToken}`,
+            },
+          });
+
+          return next(newReq);
+        }),
+
+        // ======================================
+        // 7. Refresh Request Failed
+        // ======================================
+
+        catchError((refreshError) => {
+          authService.logout();
+
+          return throwError(() => refreshError);
+        }),
+      );
     }),
   );
 };

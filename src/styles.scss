@@ -3,8 +3,38 @@
 // 1. تعريف المتغيرات العامة
 $navbar-height: 64px;
 
-// 2. استيراد Bootstrap بشكل صحيح
-@use 'bootstrap/scss/bootstrap' as bs;
+// 2. استيراد أجزاء Bootstrap المستخدمة فقط لتحسين حجم الحزمة (Modular Imports)
+// الإعدادات الأساسية
+@import "bootstrap/scss/functions";
+@import "bootstrap/scss/variables";
+@import "bootstrap/scss/variables-dark";
+@import "bootstrap/scss/maps";
+@import "bootstrap/scss/mixins";
+@import "bootstrap/scss/utilities";
+
+// المخطط والعناصر الأساسية
+@import "bootstrap/scss/root";
+@import "bootstrap/scss/reboot";
+@import "bootstrap/scss/type";
+@import "bootstrap/scss/containers";
+@import "bootstrap/scss/grid";
+@import "bootstrap/scss/helpers";
+
+// المكونات المستخدمة في التطبيق
+@import "bootstrap/scss/buttons";
+@import "bootstrap/scss/card";
+@import "bootstrap/scss/forms";
+@import "bootstrap/scss/nav";
+@import "bootstrap/scss/navbar";
+@import "bootstrap/scss/dropdown";
+@import "bootstrap/scss/alert";
+@import "bootstrap/scss/spinners";
+@import "bootstrap/scss/offcanvas";
+@import "bootstrap/scss/close";
+@import "bootstrap/scss/list-group";
+
+// مولد الفئات المساعدة (Utilities API) - ضروري لتوليد d-flex, gap, m-*, p-* إلخ
+@import "bootstrap/scss/utilities/api";
 
 // 3. الأنماط العامة لمنطقة body
 body {

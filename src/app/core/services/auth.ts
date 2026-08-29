@@ -1,11 +1,10 @@
 // src/app/core/services/auth.service.ts
-import { Injectable, inject, signal, computed, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, tap, catchError, of } from 'rxjs';
+import { HttpClient, HttpHeaders, httpResource } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { Injectable, inject, PLATFORM_ID, signal, computed } from '@angular/core';
 
-// ✅ واجهة بيانات الاستجابة من تسجيل الدخول
 export interface AuthUser {
   id: number;
   username: string;
@@ -18,7 +17,6 @@ export interface AuthUser {
   refreshToken: string;
 }
 
-// ✅ واجهة بيانات المستخدم المرتجعة من /auth/me (بدون tokens)
 export type UserProfile = Omit<AuthUser, 'accessToken' | 'refreshToken'>;
 
 @Injectable({
@@ -29,78 +27,91 @@ export class Auth {
   private readonly apiUrl = environment.apiUrl;
   private readonly platformId = inject(PLATFORM_ID);
 
-  // ✅ Signals لإدارة الحالة الداخلية
+  // 1️⃣ State Signals
   private readonly accessTokenSignal = signal<string | null>(null);
   private readonly refreshTokenSignal = signal<string | null>(null);
-  private readonly userSignal = signal<UserProfile | AuthUser | null>(null);
+  readonly isAuthenticating = signal<boolean>(false);
 
-  // ✅ Readonly Signals للوصول الخارجي
+  // 2️⃣ استخدام httpResource بدلاً من resource مع Handling للـ Idle و AbortSignal
+  readonly userResource = httpResource<UserProfile | null>(() => {
+    const token = this.accessTokenSignal();
+
+    // إذا لم يتوفر التوكن، تُرجع undefined لتصبح حالة الـ Resource خاملة ('idle')
+    if (!token) {
+      return undefined;
+    }
+
+    // إرجاع خيارات طلب HttpClient وتمرير الهيدرز المخصصة
+    return {
+      url: `${this.apiUrl}/auth/me`,
+      method: 'GET',
+      headers: new HttpHeaders({
+        Authorization: `Bearer ${token}`,
+      }),
+      // مررنا الخيارات القياسية مع استخدام Angular HTTP Stack
+    };
+  });
+
+  // 3️⃣ Computed Signals
   readonly accessToken = this.accessTokenSignal.asReadonly();
   readonly refreshToken = this.refreshTokenSignal.asReadonly();
-  readonly user = this.userSignal.asReadonly();
-  readonly isAuthenticated = computed(() => !!this.accessTokenSignal());
+  readonly user = computed(() => this.userResource.value() ?? null);
+  readonly isLoadingUser = this.userResource.isLoading;
+  readonly isAuthenticated = computed(() => !!this.accessTokenSignal() && !!this.user());
 
   constructor() {
-    // ✅ تحميل البيانات فوراً عند بدء التشغيل في المتصفح لضمان جاهزية الـ Signals للـ Guards
     if (isPlatformBrowser(this.platformId)) {
       this.loadFromStorage();
     }
   }
 
-  // 1. تسجيل الدخول
-  login(username: string, password: string): Observable<AuthUser> {
-    return this.http
-      .post<AuthUser>(`${this.apiUrl}/auth/login`, {
-        username,
-        password,
-        expiresInMins: 30,
-      })
-      .pipe(tap((res) => this.saveSession(res)));
-  }
-
-  // 2. التحقق من التوكن وجلب بيانات المستخدم الحالي
-  checkAuth(): Observable<UserProfile | null> {
-    const token = this.accessTokenSignal();
-    if (!token) return of(null);
-
-    // إضافة الهيدر يدوياً في حال عدم وجود Interceptor
-    const headers = new HttpHeaders({
-      Authorization: `Bearer ${token}`,
-    });
-
-    return this.http.get<UserProfile>(`${this.apiUrl}/auth/me`, { headers }).pipe(
-      tap((user) => this.userSignal.set(user)),
-      catchError(() => {
-        this.logout();
-        return of(null);
-      }),
-    );
-  }
-
-  // 3. تجديد التوكن (Refresh Token)
-  renewToken(): Observable<{ accessToken: string; refreshToken: string }> {
-    const currentRefreshToken = this.refreshTokenSignal();
-
-    return this.http
-      .post<{ accessToken: string; refreshToken: string }>(`${this.apiUrl}/auth/refresh`, {
-        refreshToken: currentRefreshToken,
-        expiresInMins: 30,
-      })
-      .pipe(
-        tap((res) => {
-          this.accessTokenSignal.set(res.accessToken);
-          this.refreshTokenSignal.set(res.refreshToken);
-          this.updateStoredTokens(res.accessToken, res.refreshToken);
+  // 4️⃣ تسجيل الدخول باستخدام async/await
+  async login(username: string, password: string): Promise<AuthUser> {
+    this.isAuthenticating.set(true);
+    try {
+      const response = await firstValueFrom(
+        this.http.post<AuthUser>(`${this.apiUrl}/auth/login`, {
+          username,
+          password,
+          expiresInMins: 30,
         }),
       );
+
+      this.saveSession(response);
+      return response;
+    } finally {
+      this.isAuthenticating.set(false);
+    }
   }
 
-  // 4. تسجيل الخروج
+  // 5️⃣ تجديد التوكن تلقائياً
+  async renewToken(): Promise<boolean> {
+    const currentRefreshToken = this.refreshTokenSignal();
+    if (!currentRefreshToken) return false;
+
+    try {
+      const res = await firstValueFrom(
+        this.http.post<{ accessToken: string; refreshToken: string }>(
+          `${this.apiUrl}/auth/refresh`,
+          { refreshToken: currentRefreshToken, expiresInMins: 30 },
+        ),
+      );
+
+      this.accessTokenSignal.set(res.accessToken);
+      this.refreshTokenSignal.set(res.refreshToken);
+      this.updateStoredTokens(res.accessToken, res.refreshToken);
+      return true;
+    } catch {
+      this.logout();
+      return false;
+    }
+  }
+
+  // 6️⃣ تسجيل الخروج
   logout(): void {
     this.accessTokenSignal.set(null);
     this.refreshTokenSignal.set(null);
-    this.userSignal.set(null);
-    if (typeof localStorage !== 'undefined') {
+    if (isPlatformBrowser(this.platformId)) {
       localStorage.removeItem('auth_session');
     }
   }
@@ -109,15 +120,14 @@ export class Auth {
   private saveSession(user: AuthUser): void {
     this.accessTokenSignal.set(user.accessToken);
     this.refreshTokenSignal.set(user.refreshToken);
-    this.userSignal.set(user);
 
-    if (typeof localStorage !== 'undefined') {
+    if (isPlatformBrowser(this.platformId)) {
       localStorage.setItem('auth_session', JSON.stringify(user));
     }
   }
 
   private updateStoredTokens(accessToken: string, refreshToken: string): void {
-    if (typeof localStorage === 'undefined') return;
+    if (!isPlatformBrowser(this.platformId)) return;
     const saved = localStorage.getItem('auth_session');
     if (saved) {
       try {
@@ -132,14 +142,13 @@ export class Auth {
   }
 
   private loadFromStorage(): void {
-    if (typeof localStorage === 'undefined') return;
+    if (!isPlatformBrowser(this.platformId)) return;
     const saved = localStorage.getItem('auth_session');
     if (saved) {
       try {
         const user: AuthUser = JSON.parse(saved);
         this.accessTokenSignal.set(user.accessToken);
         this.refreshTokenSignal.set(user.refreshToken);
-        this.userSignal.set(user);
       } catch {
         localStorage.removeItem('auth_session');
       }

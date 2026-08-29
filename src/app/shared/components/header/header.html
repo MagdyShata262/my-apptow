@@ -1,92 +1,219 @@
 <nav class="navbar navbar-expand-lg bg-body-tertiary fixed-top border-bottom shadow-sm">
   <div class="container">
+
+    <!-- Brand -->
     <a class="navbar-brand fw-bold" routerLink="/" (click)="closeMenu()">
       🛍️ Dummy Store
     </a>
 
-    <!-- أدوات التحكم الشاشات الصغيرة (Dark Mode + Toggler) -->
+
+    <!-- ====================================== -->
+    <!-- Mobile Controls -->
+    <!-- ====================================== -->
+
     <div class="d-flex align-items-center gap-2 ms-auto me-2 me-lg-0 order-lg-3">
+
+      <!-- Theme -->
       <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" type="button"
-        aria-label="Toggle dark mode" [attr.aria-pressed]="isDarkMode() === 'dark'" (click)="toggleTheme()">
-        <span aria-hidden="true">{{ isDarkMode() === 'dark' ? '☀️' : '🌙' }}</span>
-        <span class="d-none d-sm-inline">{{ isDarkMode() === 'dark' ? 'Light' : 'Dark' }}</span>
+        aria-label="Toggle dark mode" [attr.aria-pressed]="theme() === 'dark'" (click)="toggleTheme()">
+        <span aria-hidden="true">
+          {{ theme() === 'dark' ? '☀️' : '🌙' }}
+        </span>
+
+        <span class="d-none d-sm-inline">
+          {{ theme() === 'dark' ? 'Light' : 'Dark' }}
+        </span>
       </button>
 
+
+      <!-- Mobile Navbar Toggle -->
       <button class="navbar-toggler" type="button" (click)="toggleMenu()" aria-controls="offcanvasNavbar"
         [attr.aria-expanded]="!isMenuCollapsed()" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
+
     </div>
 
+
+    <!-- ====================================== -->
     <!-- Offcanvas Navbar -->
-    <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasNavbar" [class.show]="!isMenuCollapsed()">
+    <!-- ====================================== -->
+
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasNavbar" [class.show]="!isMenuCollapsed()"
+      [attr.aria-hidden]="isMenuCollapsed()">
+
+      <!-- Offcanvas Header -->
 
       <div class="offcanvas-header border-bottom">
-        <h5 class="offcanvas-title fw-bold" id="offcanvasNavbarLabel">🛍️ Dummy Store</h5>
+
+        <h5 class="offcanvas-title fw-bold" id="offcanvasNavbarLabel">
+          🛍️ Dummy Store
+        </h5>
+
         <button type="button" class="btn-close" (click)="closeMenu()" aria-label="Close"></button>
+
       </div>
 
+
+      <!-- Offcanvas Body -->
+
       <div class="offcanvas-body">
+
+        <!-- ================================= -->
+        <!-- Main Navigation -->
+        <!-- ================================= -->
+
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+          <!-- Home -->
+
           <li class="nav-item">
+
             <a class="nav-link" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"
-              (click)="closeMenu()">Home</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" routerLink="/about" routerLinkActive="active" (click)="closeMenu()">About</a>
+              (click)="closeMenu()">
+              Home
+            </a>
+
           </li>
 
-          @if (authService.isAuthenticated()) {
+
+          <!-- About -->
+
           <li class="nav-item">
-            <a class="nav-link" routerLink="/products" routerLinkActive="active" (click)="closeMenu()">Products</a>
-            <!-- ✅ تصحيح المسار لـ /products -->
+
+            <a class="nav-link" routerLink="/about" routerLinkActive="active" (click)="closeMenu()">
+              About
+            </a>
+
           </li>
+
+
+          <!-- Products -->
+
+          @if (authService.isAuthenticated()) {
+
+          <li class="nav-item">
+
+            <a class="nav-link" routerLink="/products" routerLinkActive="active" (click)="closeMenu()">
+              Products
+            </a>
+
+          </li>
+
           }
+
         </ul>
 
-        <!-- قسم المستخدم وقائمة الخيارات -->
+
+        <!-- ================================= -->
+        <!-- User Section -->
+        <!-- ================================= -->
+
         <ul class="navbar-nav align-items-lg-center gap-2">
+
+          <!-- Authenticated User -->
+
           @if (authService.isAuthenticated()) {
+
           @let user = authService.user();
 
           <li class="nav-item dropdown w-100 w-lg-auto">
+
+            <!-- User Button -->
+
             <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button"
-              (click)="toggleUserMenu($event)">
+              [attr.aria-expanded]="isUserMenuOpen()" (click)="toggleUserMenu($event)">
+
               @if (user?.image) {
+
               <img [src]="user!.image" [alt]="user!.firstName" class="rounded-circle me-2" width="30" height="30" />
+
               }
-              <span>{{ user?.firstName }} {{ user?.lastName }}</span>
+
+              <span>
+                {{ user?.firstName }}
+                {{ user?.lastName }}
+              </span>
+
             </a>
 
+
+            <!-- User Dropdown -->
+
             @if (isUserMenuOpen()) {
+
             <ul class="dropdown-menu dropdown-menu-end show shadow-sm">
-              <li><a class="dropdown-item" routerLink="/profile" (click)="closeAllMenus()">Profile</a></li>
-              <li><a class="dropdown-item" routerLink="/settings" (click)="closeAllMenus()">Settings</a></li>
+
               <li>
-                <hr class="dropdown-divider">
+
+                <a class="dropdown-item" routerLink="/profile" (click)="closeAllMenus()">
+                  Profile
+                </a>
+
               </li>
+
+
               <li>
-                <button class="dropdown-item text-danger border-0 bg-transparent w-100 text-start" (click)="logout()">
+
+                <a class="dropdown-item" routerLink="/settings" (click)="closeAllMenus()">
+                  Settings
+                </a>
+
+              </li>
+
+
+              <li>
+                <hr class="dropdown-divider" />
+              </li>
+
+
+              <li>
+
+                <button type="button" class="dropdown-item text-danger border-0 bg-transparent w-100 text-start"
+                  (click)="logout()">
                   Logout
                 </button>
+
               </li>
+
             </ul>
+
             }
+
           </li>
+
+
           } @else {
+
+          <!-- Login -->
+
           <li class="nav-item">
+
             <a class="btn btn-primary btn-sm fw-semibold w-100 w-lg-auto" routerLink="/auth/login"
               (click)="closeMenu()">
               Login
             </a>
+
           </li>
+
           }
+
         </ul>
+
       </div>
+
     </div>
+
   </div>
 </nav>
 
+
+<!-- ========================================== -->
+<!-- Offcanvas Backdrop -->
+<!-- ========================================== -->
+
 @if (!isMenuCollapsed()) {
+
 <div class="offcanvas-backdrop fade show" (click)="closeMenu()"></div>
+
 }

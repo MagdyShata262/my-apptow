@@ -39,4 +39,12 @@ describe('Header', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('should not have d-none class on offcanvas element when collapsed to prevent hiding on desktop', () => {
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    const offcanvas = compiled.querySelector('.offcanvas');
+    expect(offcanvas).toBeTruthy();
+    expect(offcanvas?.classList.contains('d-none')).toBe(false);
+  });
 });
