@@ -16,6 +16,11 @@
 <!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
 <!-- * * * * * * * * * * End of Placeholder  * * * * * * * * * * * * -->
 <!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+<app-header (openLogin)="openLoginModal()" />
 
-<app-header />
-<router-outlet />
+<main>
+  <router-outlet />
+</main>
+
+<!-- 📍 الحاوية الخاصة بالنافذة الديناميكية -->
+<ng-container #modalHost></ng-container>

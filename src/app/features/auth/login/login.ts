@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { form, FormField } from '@angular/forms/signals';
@@ -20,6 +20,10 @@ export class Login {
   private readonly authService = inject(Auth);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+
+  // 📤 مخرجات للتحكم بالمكون من الخرج
+  close = output<void>();
+  loginSuccess = output<void>();
 
   loginModel = signal<LoginData>({
     username: 'emilys',
@@ -46,12 +50,13 @@ export class Login {
     try {
       await this.authService.login(credentials.username, credentials.password);
 
-      const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/products';
+      // 📢 إعلام المكون الأب بنجاح الدخول
+      this.loginSuccess.emit();
 
+      const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/products';
       await this.router.navigateByUrl(returnUrl);
     } catch (error) {
       console.error('Login error:', error);
-
       this.error.set('بيانات الدخول غير صحيحة، يرجى المحاولة مرة أخرى.');
     } finally {
       this.loading.set(false);

@@ -1,6 +1,13 @@
 // src/app/features/home/home.component.ts
 
-import { Component, inject, ChangeDetectionStrategy, signal } from '@angular/core';
+import {
+  Component,
+  inject,
+  ChangeDetectionStrategy,
+  signal,
+  OnInit,
+  linkedSignal,
+} from '@angular/core';
 
 import { Router, RouterLink } from '@angular/router';
 
@@ -26,7 +33,41 @@ interface LoginData {
 
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Home {
+export class Home implements OnInit {
+  query = signal('');
+
+  // دالة التأخير
+
+  // 1. الإنشاء الابتدائي
+  shippingOptions = signal(['Ground', 'Air', 'Sea']);
+
+  count = signal(0);
+  debouncedQuery: any;
+
+  ngOnInit() {
+    console.log(this.count());
+
+    this.count.set(3);
+    console.log(this.count());
+
+    const selectedOption = linkedSignal(() => this.shippingOptions()[0]);
+
+    console.log(selectedOption());
+    // ➔ النتيجة: 'Ground' (لأنه الخيار الأول في shippingOptions)
+
+    // 2. تعديل المستخدم اليدوي (User Selection)
+    selectedOption.set(this.shippingOptions()[2]);
+
+    console.log(selectedOption());
+    // ➔ النتيجة: 'Sea' (تم التعديل يدوياً بنجاح لأن linkedSignal قابل للتعديل Writable)
+
+    // 3. تغيير المصدر الأصلي من الخادم أو مكون آخر
+    this.shippingOptions.set(['Email', 'Will Call', 'Postal service']);
+
+    console.log(selectedOption());
+    // ➔ النتيجة: 'Email' (انتبه هنا!)
+  }
+
   protected readonly authService = inject(Auth);
   private readonly router = inject(Router);
 

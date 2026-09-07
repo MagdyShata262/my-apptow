@@ -1,7 +1,7 @@
 <div class="container mt-5" style="max-width: 420px;">
   <div class="card shadow border-0 rounded-3">
     <div class="card-body p-4">
-      <h3 class="card-title text-center mb-4 text-primary fw-bold">تسجيل الدخول</h3>
+      <h3 class="card-title text-center mb-4 text-primary fw-bold">تسجيل الدخول 🔑</h3>
 
       @if (error()) {
       <div class="alert alert-danger py-2" role="alert">
@@ -10,24 +10,50 @@
       }
 
       <form (submit)="onLogin($event)">
+        <!-- حقل اسم المستخدم -->
         <div class="mb-3">
           <label class="form-label fw-semibold">اسم المستخدم</label>
-          <input type="text" class="form-control" [formField]="loginForm.username" placeholder="أدخل اسم المستخدم" />
+          <input type="text" class="form-control"
+            [class.is-invalid]="loginForm.username().touched() && loginForm.username().errors().length"
+            [formField]="loginForm.username" placeholder="أدخل اسم المستخدم" />
+
+          @if (loginForm.username().touched() && loginForm.username().errors()?.length) {
+          <div class="invalid-feedback d-block mt-1">
+            {{ loginForm.username().errors()![0].message }}
+          </div>
+          }
         </div>
 
+        <!-- حقل كلمة المرور -->
         <div class="mb-3">
           <label class="form-label fw-semibold">كلمة المرور</label>
-          <input type="password" class="form-control" [formField]="loginForm.password" placeholder="••••••••" />
+          <input type="password" class="form-control"
+            [class.is-invalid]="loginForm.password().touched() && loginForm.password().errors()?.length"
+            [formField]="loginForm.password" placeholder="••••••••" />
+
+          @if (loginForm.password().touched() && loginForm.password().errors()?.length) {
+          <div class="invalid-feedback d-block mt-1">
+            {{ loginForm.password().errors()![0].message }}
+          </div>
+          }
         </div>
 
-        <button type="submit" class="btn btn-primary w-100 py-2 mt-2 fw-semibold" [disabled]="loading()">
-          @if (loading()) {
-          <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-          جاري التحقق...
-          } @else {
-          دخول
-          }
-        </button>
+        <!-- أزرار التحكم -->
+        <div class="d-flex gap-2 mt-4">
+          <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold" [disabled]="loading()">
+            @if (loading()) {
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            جاري التحقق...
+            } @else {
+            دخول
+            }
+          </button>
+
+          <!-- زر الإلغاء لإغلاق النافذة عند استدعائها كـ Modal -->
+          <button type="button" class="btn btn-outline-secondary py-2 fw-semibold" (click)="close.emit()">
+            إلغاء
+          </button>
+        </div>
       </form>
     </div>
   </div>
