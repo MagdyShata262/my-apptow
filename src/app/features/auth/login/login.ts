@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { form, FormField } from '@angular/forms/signals';
 import { Auth } from '../../../core/services/auth';
+import { ToastService } from '../../../core/services/toast.service';
 
 interface LoginData {
   username: string;
@@ -18,9 +19,13 @@ interface LoginData {
 })
 export class Login {
   private readonly authService = inject(Auth);
+  private readonly toastService = inject(ToastService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
+  constructor() {
+    console.log(this.route);
+  }
   // 📤 مخرجات للتحكم بالمكون من الخرج
   close = output<void>();
   loginSuccess = output<void>();
@@ -50,6 +55,11 @@ export class Login {
     try {
       await this.authService.login(credentials.username, credentials.password);
 
+      this.toastService.show('تم تسجيل الدخول بنجاح 🎉', {
+        type: 'success',
+        position: 'top-center',
+      });
+
       // 📢 إعلام المكون الأب بنجاح الدخول
       this.loginSuccess.emit();
 
@@ -57,7 +67,12 @@ export class Login {
       await this.router.navigateByUrl(returnUrl);
     } catch (error) {
       console.error('Login error:', error);
-      this.error.set('بيانات الدخول غير صحيحة، يرجى المحاولة مرة أخرى.');
+      const errorMessage = 'بيانات الدخول غير صحيحة، يرجى المحاولة مرة أخرى.';
+      this.error.set(errorMessage);
+      this.toastService.show(errorMessage, {
+        type: 'error',
+        position: 'top-center',
+      });
     } finally {
       this.loading.set(false);
     }
